@@ -1,17 +1,27 @@
 
+from re import T
 import pandas as pd
 import numpy as np
 import tkinter as tk 
 
 from tkinter import filedialog
 
+file = open('output.txt', 'w')
 
 # Defining data structures for doubly linked lists 
 
 class Node: 
-    def __init__(self, orderID, isCoprint, noRolls, noLanes): 
+    def __init__(self, orderID, noRolls, noLanes): 
         self.orderID = orderID
-        self.isCoprint = isCoprint
+#        self.isCoprint = isCoprint
+        if noRolls > 3:
+            self.isLarge = True
+        else:
+            self.isLarge = False
+        if orderID[-1] == 'C':
+            self.isCoprint = True
+        else:
+            self.isCoprint = False
         self.noRolls = noRolls
         self.noLanes = noLanes
         self.next = None 
@@ -21,9 +31,9 @@ class doublyLinkedList:
     def __init__(self): 
         self.head = None
 
-    def insertAtBeg(self, orderID, isCoprint, noRolls, noLanes): 
+    def insertAtBeg(self, orderID, noRolls, noLanes): 
 
-        new_node = Node(orderID, isCoprint, noRolls, noLanes)
+        new_node = Node(orderID, noRolls, noLanes)
         new_node.next = self.head
         new_node.prev = None 
 
@@ -34,12 +44,12 @@ class doublyLinkedList:
         self.head = new_node
 
 
-    def insertAtPos(self, prev_node, orderID, isCoprint, noRolls, noLanes):
+    def insertAtPos(self, prev_node, orderID, noRolls, noLanes):
         if prev_node is None: 
             print("This node does not exist")
             return 
 
-        new_node = Node(orderID, isCoprint, noRolls, noLanes) 
+        new_node = Node(orderID, noRolls, noLanes) 
         new_node.next = prev_node.next
         prev_node.next = new_node
         new_node.prev = prev_node
@@ -48,8 +58,8 @@ class doublyLinkedList:
             new_node.next.prev = new_node
             
 
-    def insertAtEnd(self, orderID, isCoprint, noRolls, noLanes): 
-        new_node = Node(orderID, isCoprint, noRolls, noLanes)
+    def insertAtEnd(self, orderID, noRolls, noLanes): 
+        new_node = Node(orderID, noRolls, noLanes)
         last = self.head
 
         new_node.next = None
@@ -69,11 +79,21 @@ class doublyLinkedList:
     
     def printList(self, node):
  
-        print("\nTraversal in forward direction")
+#        print("\nTraversal in forward direction")
         while node:
-            print(" {}".format(node.orderID))
+            print(" {}".format(node.orderID), file=file)
             last = node
             node = node.next
+    
+    # This function returns size of linked list
+    def findSize(self, node):
+    
+        res = 0
+        while (node != None):
+            res = res + 1
+            node = node.next
+        
+        return res
     
 
 
@@ -126,19 +146,63 @@ print(df[:20])
 schedule54 = doublyLinkedList() # linked list maintaining schedule for slitter 54
 schedule55 = doublyLinkedList() # linkedlist maintaining schedule for slitter 55
 
+
+
+def comparison(current):
+    if schedule54.head is None:
+        schedule54.insertAtEnd(current.orderID, current.noRolls, current.noLanes)
+        return
+    elif schedule55.head is None:
+        schedule55.insertAtEnd(current.orderID, current.noRolls, current.noLanes)
+        return
+    else:
+        last54 = schedule54.head
+        last55 = schedule55.head
+        while (last54.next is not None): 
+            last54 = last54.next
+        while (last55.next is not None): 
+            last55 = last55.next
+        if compatible(last54, last55) is False:
+            if compatible(last54, current) is True:
+                schedule54.insertAtPos(last55.prev, current.orderID, current.noRolls, current.noLanes)
+                return
+            if compatible(last55, current) is True:
+                schedule55.insertAtPos(last54.prev, current.orderID, current.noRolls, current.noLanes)
+                return
+        if schedule54.findSize(schedule54.head) > schedule55.findSize(schedule55.head):
+            schedule55.insertAtEnd(current.orderID, current.noRolls, current.noLanes)
+        else:
+            schedule54.insertAtEnd(current.orderID, current.noRolls, current.noLanes)
+        return
+
+# Implementation of current 5 scheduling rules
+
+def compatible(a, b):
+    if (a.isLarge == True and b.isCoprint == True) or (b.isLarge == True and a.isCoprint == True):
+        return True
+    elif a.noLanes == 9 and b.noLanes == 9:
+        return False
+    elif a.isCoprint == True and b.isCoprint == True:
+        return False
+    else:
+        return True
+
 # reading through the dataframe line by lone to create nodes 
 for index, row in sorted_df.iterrows():
     orderID = row[' Order']
     noLanes = row[' Lanes']
     noRolls = row[' No Of Rolls']
-    dueDate = row[' POrder Due Date']
-    current_node = [orderID, noLanes, noRolls, dueDate]
+#    dueDate = row[' POrder Due Date']
+    current_node = Node(orderID, noLanes, noRolls)
     #print(current_node)
+    for i in range(noRolls):
+        comparison(current_node)      
 
 
-
-# Implementation of current 5 scheduling rules
-
-
+print("Schedule for slitter 54:", file=file)        
+schedule54.printList(schedule54.head)
+print("\nSchedule for slitter 55:", file=file)
+schedule55.printList(schedule55.head)
+file.close()
 
 
