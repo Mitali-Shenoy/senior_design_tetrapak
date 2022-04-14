@@ -9,7 +9,8 @@ import tkinter as tk
 from tkinter import filedialog
 # %%
 
-file = open('output.txt', 'w')
+file1 = open('output1.txt', 'w')
+file2 = open('output2.txt', 'w')
 # Defining data structures for doubly linked lists 
 
 class Node: 
@@ -107,6 +108,7 @@ class doublyLinkedList:
             new_node.start_time = last.end_time
         else:
             new_node.start_time = 40 + last.end_time
+
         new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
 
     #def get():
@@ -114,11 +116,15 @@ class doublyLinkedList:
     def printList(self, node):
  
 #        print("\nTraversal in forward direction")
+        text = ""
         while node:
             
-            print(" {}, {}, {}, {}, {}, {}, {}, {}, {}".format(node.orderID, node.noRolls, node.noLanes, node.qsv, node.waste, node.no_coprint, node.restriction, node.start_time, node.end_time))
-            last = node
+            # print(" {} {} {} {} {} {} {} {} {}".format(node.orderID, node.qsv, node.noLanes, node.noRolls, node.waste, node.no_coprint, node.restriction, node.start_time, node.end_time))
+            text = text + "{},{},{},{},{},{},{}\n".format(node.orderID, node.qsv, node.noLanes, node.noRolls, node.waste, node.no_coprint, node.restriction)
+            # last = node
             node = node.next
+
+        return text
     
     # This function returns size of linked list
     def findSize(self, node):
@@ -141,25 +147,25 @@ class doublyLinkedList:
             current = current.next
         return newLinkedList
     
-    def swap(self, old, new):
-        tail = self.head
-        while (tail.next is not None):
-            tail = tail.next
-        if old == self.head:
-            new.next = self.head.next
-            self.head = new
-        elif old == tail:
-            tail.prev.next = new
-            tail = new
-        else:
-            old.prev.next = new
-            new.next = old.next
-        cur = new
-        while cur.next is not None:
-            if cur.prev.qsv != cur.qsv:
-                cur.start_time = cur.prev.end_time + 40
-            cur.end_time = cur.start_time + (18 * cur.noRolls)
-            cur = cur.next
+    # def swap(self, old, new):
+    #     tail = self.head
+    #     while (tail.next is not None):
+    #         tail = tail.next
+    #     if old == self.head:
+    #         new.next = self.head.next
+    #         self.head = new
+    #     elif old == tail:
+    #         tail.prev.next = new
+    #         tail = new
+    #     else:
+    #         old.prev.next = new
+    #         new.next = old.next
+    #     cur = new
+    #     while cur.next is not None:
+    #         if cur.prev.qsv != cur.qsv:
+    #             cur.start_time = cur.prev.end_time + 40
+    #         cur.end_time = cur.start_time + (18 * cur.noRolls)
+    #         cur = cur.next
     
 
 
@@ -183,12 +189,12 @@ tk.Tk().withdraw() # prevents an empty tkinter window from appearing
 #asking the user to select their input file
 file_path = filedialog.askopenfilename()
 
-print(file_path)
+# print(file_path)
 
 #converting input excel file into a dataframe 
 wr_df = pd.read_excel(file_path) #read Wip Report File (wp)
 
-print(wr_df)
+# print(wr_df)
 
 
 file = open('output.txt', 'w')
@@ -198,14 +204,14 @@ tk.Tk().withdraw() # prevents an empty tkinter window from appearing
 #asking the user to select their input file
 file_path = filedialog.askopenfilename()
 
-print(file_path)
+# print(file_path)
 
 # converting input excel file into a dataframe 
 
 
 sp_df = pd.read_excel(file_path) #read Slit Plan file
 
-print(sp_df)
+# print(sp_df)
 
 
 # cleaning up the input data file for WIP report 
@@ -218,16 +224,16 @@ wr_df = wr_df[["Material"," Order", " QSV", " Lanes", " No Of Rolls", " Potentia
 wr_df = pd.DataFrame(wr_df[wr_df['Material']=='WIP Printing-Lamina'])
 wr_df = wr_df.astype({" Order": str, " Lanes": int, " No Of Rolls": int}) #setting the datatype for columns
 wr_df[" POrder Due Date"] = pd.to_datetime(wr_df[" POrder Due Date"])
-print(wr_df)
+# print(wr_df)
 
-print()
+# print()
 # print(sp_df.columns)
 
 # cleaning up the in[ut data file for Slit Plan
 sp_df = sp_df[[0, "Order number", "Package.Volume", "Package.Shape", "Lane Assignment"]]
 sp_df = sp_df.astype({0 : int, "Order number": str, "Package.Volume": str, "Package.Shape": str, "Lane Assignment": str}) #setting the datatype for columns
 
-print(sp_df)
+# print(sp_df)
 
 # %%
 
@@ -240,15 +246,15 @@ bucket_2 = sorted_wr_df.iloc[int((order_len/3)):int(2*(order_len/3))+1,:]
 bucket_3 = sorted_wr_df.iloc[int((2*(order_len/3))+1):order_len+1,:] 
 
 
-print("\nBucket 1")
+# print("\nBucket 1")
 sorted_b1 = bucket_1.sort_values(by = [" QSV"])
-print(sorted_b1)
-print("\nBucket 2\n")
+# print(sorted_b1)
+# print("\nBucket 2\n")
 sorted_b2 = bucket_2.sort_values(by = [" QSV"])
-print(sorted_b2)
-print("\nBucket 3\n")
+# print(sorted_b2)
+# print("\nBucket 3\n")
 sorted_b3 = bucket_3.sort_values(by = [" QSV"])
-print(sorted_b3)
+# print(sorted_b3)
 
 
 # %%
@@ -259,8 +265,8 @@ schedule55 = doublyLinkedList() # linkedlist maintaining schedule for slitter 55
 # creating nodes from the input file 
 
 # printing new lines
-print()
-print()
+# print()
+# print()
 
 def create_node(wip_row):
 
@@ -364,20 +370,28 @@ def scanToInsert(node):
                 else:
                     schedule55.insertAtEnd(node)
                     return
-    else:
-        if cur1.qsv != node.qsv & cur2.qsv != node.qsv:
-            node.start_time += 40
-            if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
+
+    if (cur1.qsv != node.qsv) and (cur2.qsv != node.qsv):
+        # node.start_time += 40
+        if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
+            if node.restriction == "54":
                 schedule54.insertAtEnd(node)
                 return
-            else:
+            else: 
                 schedule55.insertAtEnd(node)
                 return
         else:
-            if cur1.qsv == node.qsv:
-                findBestSpot(node)
-            else:
-                findBestSpot(node)
+            if node.restriction == "55":
+                schedule55.insertAtEnd(node)
+                return
+            else: 
+                schedule54.insertAtEnd(node)
+                return
+
+    if cur1.qsv == node.qsv:
+        findBestSpot(node)
+    else:
+        findBestSpot(node)
 
 def findBestSpot(node):
     cur1 = schedule54.head
@@ -390,8 +404,8 @@ def findBestSpot(node):
         cur2 = cur2.next
     
     bestImprovement = 0
-    while (cur1.qsv == node.qsv & cur1 is not None):
-        while (cur2.end_time > cur1.start_time & cur2 is not None):
+    while (cur1 is not None and cur1.qsv == node.qsv ):
+        while (cur2 is not None and cur2.end_time > cur1.start_time ):
             if cur2.start_time < cur1.end_time:
                 if bestImprovement < isCompatible(cur2, node) - isCompatible(cur1, cur2):
                     bestImprovement = isCompatible(cur2, node) - isCompatible(cur1, cur2)
@@ -400,34 +414,44 @@ def findBestSpot(node):
             cur2 = cur2.prev
         cur1 = cur1.prev
     if bestImprovement <= 0:
-        schedule54.insertAtEnd(node)
+        if node.restriction == "54":
+            schedule54.insertAtEnd(node)
+            return
+        else: 
+            schedule55.insertAtEnd(node)
     else:
-        schedule54.swap(best1, node)            
+        # schedule54.swap(best1, node) 
+        if node.restriction == "55":
+            schedule55.insertAtEnd(node)
+            return
+        else: 
+            schedule54.insertAtEnd(node)
+            return
 
 def isCompatible(node1, node2):
     compatibiltyScore = 0
     totalNoLanes = node1.noLanes + node2.noLanes
     if totalNoLanes > 16:
         compatibiltyScore -= 2
-    elif totalNoLanes > 14 & totalNoLanes <= 16:
+    elif totalNoLanes > 14 and totalNoLanes <= 16:
         compatibiltyScore -= 1
-    elif totalNoLanes >= 12 & totalNoLanes <= 14:
+    elif totalNoLanes >= 12 and totalNoLanes <= 14:
         compatibiltyScore += 1
     else:
         compatibiltyScore += 2
 
-    if node1.isCoprint is True & node2.isCoprint is True:
+    if node1.isCoprint is True and node2.isCoprint is True:
         if node1.no_coprint + node2.no_coprint >= 8:
             compatibiltyScore -= 2
         else:
             compatibiltyScore -= 1
-    if ((node1.isCoprint is True & node2.isLarge is True) |  (node2.isCoprint is True & node1.isLarge is True)):
+    if ((node1.isCoprint is True and node2.isLarge is True) or (node2.isCoprint is True and node1.isLarge is True)):
         compatibiltyScore += 1
 
     totalWaste = node1.waste + node2.waste
     if totalWaste > 1500:
         compatibiltyScore -= 2
-    elif totalWaste >= 500 & totalWaste <= 1500:
+    elif totalWaste >= 500 and totalWaste <= 1500:
         compatibiltyScore -= 1
     elif totalWaste < 500:
         compatibiltyScore += 1
@@ -438,12 +462,47 @@ for index, row in sorted_b1.iterrows():
    new_node = create_node(row)
    scanToInsert(new_node)
 
-print('\nSchedule 54')
-schedule54.printList(schedule54.head)
-print('\nSchedule 55')
-schedule55.printList(schedule55.head)
+for index, row in sorted_b2.iterrows():
+   new_node = create_node(row)
+   scanToInsert(new_node)
 
-    
+for index, row in sorted_b3.iterrows():
+   new_node = create_node(row)
+   scanToInsert(new_node)
+
+# for index, row in sorted_wr_df.iterrows():
+#    new_node = create_node(row)
+#    scanToInsert(new_node)
+
+sorted_wr_df
+# print('\nSchedule 54')
+print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction", file=file1)
+print(schedule54.printList(schedule54.head), file=file1)
+# print('\nSchedule 55')
+print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction", file=file2)
+print(schedule55.printList(schedule55.head), file=file2)
+
+file1.close()
+
+df_54 = pd.read_csv("output1.txt", delimiter=",")
+print(df_54)
        
-    
+file2.close()
+
+df_55 = pd.read_csv("output2.txt", delimiter=",")
+print(df_55)
+
+tmp_54 = df_54
+tmp_54["Scheduled Machine"] = 54
+tmp_55 = df_55
+tmp_55["Scheduled Machine"] = 55
+frames = [tmp_54, tmp_55]
+df_combined = pd.concat(frames)
+
+writer = pd.ExcelWriter('schedules.xlsx', engine='xlsxwriter')
+df_54.to_excel(writer, sheet_name='Schedule 54', index = False)
+df_55.to_excel(writer, sheet_name='Schedule 55', index = False)
+df_combined.to_excel(writer, sheet_name='Combined Schedules', index = False)
+
+writer.save()
 # %%
