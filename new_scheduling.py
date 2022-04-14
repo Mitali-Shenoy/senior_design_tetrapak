@@ -1,12 +1,12 @@
 
 # %%
+import random
 from re import T
 import pandas as pd
 import numpy as np
 import tkinter as tk 
 
 from tkinter import filedialog
-
 # %%
 
 file = open('output.txt', 'w')
@@ -53,6 +53,13 @@ class doublyLinkedList:
             self.head.prev = new_node
 
         self.head = new_node
+        new_node.start_time = 0
+        new_node.end_time = 18 * new_node.noRolls
+        last = self.head
+        while (last.next is not None):
+            last = last.next
+            last.start_time = last.prev.end_time
+            last.end_time = last.start_time + (18 * last.noRolls)
 
 
     def insertAtPos(self, prev_node, new_node):
@@ -67,6 +74,15 @@ class doublyLinkedList:
 
         if new_node.next is not None: 
             new_node.next.prev = new_node
+        
+        new_node.start_time = new_node.prev.end_time
+        new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
+
+        rest = new_node
+        while (rest.next is not None):
+            rest = rest.next
+            rest.start_time = rest.prev.end_time
+            rest.end_time = rest.start_time + (18 * rest.noRolls)
             
 
     def insertAtEnd(self, new_node): 
@@ -78,6 +94,8 @@ class doublyLinkedList:
         if self.head is None: 
             new_node.prev = None 
             self.head = new_node
+            new_node.start_time = 0
+            new_node.end_time = 18 * new_node.noRolls            
             return 
 
         while (last.next is not None): 
@@ -85,6 +103,11 @@ class doublyLinkedList:
         
         last.next = new_node 
         new_node.prev = last
+        if new_node.start_time is None:
+            new_node.start_time = last.end_time
+        else:
+            new_node.start_time = 40 + last.end_time
+        new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
 
     #def get():
     
@@ -93,7 +116,7 @@ class doublyLinkedList:
 #        print("\nTraversal in forward direction")
         while node:
             
-            print(" {}, {}, {}, {}, {}, {}, {}".format(node.orderID, node.noRolls, node.noLanes, node.qsv, node.waste, node.no_coprint, node.restriction), file=file)
+            print(" {}, {}, {}, {}, {}, {}, {}, {}, {}".format(node.orderID, node.noRolls, node.noLanes, node.qsv, node.waste, node.no_coprint, node.restriction, node.start_time, node.end_time))
             last = node
             node = node.next
     
@@ -106,6 +129,37 @@ class doublyLinkedList:
             node = node.next
         
         return res
+
+    def CopyList(self):#Out put new Linked List that is a copy of current Linked List with out altering it. 
+        # create new LinkedList
+        newLinkedList = doublyLinkedList()
+        current = self.head
+        #below is from stackoverflow : https://stackoverflow.com/questions/36491307/how-to-copy-linked-list-in-python
+        while current is not None:
+            newNode = Node(current.orderID, current.noRolls, current.noLanes, current.qsv, current.waste, current.no_coprint, current.restriction)
+            newLinkedList.insertAtEnd(newNode)
+            current = current.next
+        return newLinkedList
+    
+    def swap(self, old, new):
+        tail = self.head
+        while (tail.next is not None):
+            tail = tail.next
+        if old == self.head:
+            new.next = self.head.next
+            self.head = new
+        elif old == tail:
+            tail.prev.next = new
+            tail = new
+        else:
+            old.prev.next = new
+            new.next = old.next
+        cur = new
+        while cur.next is not None:
+            if cur.prev.qsv != cur.qsv:
+                cur.start_time = cur.prev.end_time + 40
+            cur.end_time = cur.start_time + (18 * cur.noRolls)
+            cur = cur.next
     
 
 
@@ -189,10 +243,10 @@ bucket_3 = sorted_wr_df.iloc[int((2*(order_len/3))+1):order_len+1,:]
 print("\nBucket 1")
 sorted_b1 = bucket_1.sort_values(by = [" QSV"])
 print(sorted_b1)
-print("Bucket 2\n")
+print("\nBucket 2\n")
 sorted_b2 = bucket_2.sort_values(by = [" QSV"])
 print(sorted_b2)
-print("Bucket 3\n")
+print("\nBucket 3\n")
 sorted_b3 = bucket_3.sort_values(by = [" QSV"])
 print(sorted_b3)
 
@@ -202,8 +256,9 @@ print(sorted_b3)
 schedule54 = doublyLinkedList() # linked list maintaining schedule for slitter 54
 schedule55 = doublyLinkedList() # linkedlist maintaining schedule for slitter 55
 
-#creating nodes from the input file 
+# creating nodes from the input file 
 
+# printing new lines
 print()
 print()
 
@@ -224,8 +279,6 @@ def create_node(wip_row):
     else:
         no_coprint = 0
 
-   
-
     matching_id = sp_df[sp_df['Order number']==orderID]
     volume = matching_id.iloc[0,2]
     shape = matching_id.iloc[0,3]
@@ -239,9 +292,148 @@ def create_node(wip_row):
     else: 
         restriction = "na"
 
-
-    # print(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
+#    print(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
     new_node = Node(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
+    return new_node
 
-# for index, row in sorted_b1.iterrows():
-#     create_node(row)
+#for index, row in sorted_b1.iterrows():
+#    new_node = create_node(row)
+#    schedule54.insertAtEnd(new_node)
+
+#temp = sorted_b1.iloc[0]
+#new_node = create_node(temp)
+# schedule54.insertAtBeg(new_node)
+# temp = sorted_b1.iloc[2]
+# new_node = create_node(temp)
+#temp = schedule54.CopyList()
+# temp = schedule54.head
+# while (temp.next is not None): 
+#     temp = temp.next
+
+# schedule54.insertAtPos(temp.prev, new_node)
+# schedule54.printList(schedule54.head)
+
+def scanToInsert(node):
+    if schedule54.head is None: 
+        if schedule55.head is None:
+            if node.restriction == '54':
+                schedule54.insertAtEnd(node)
+            elif node.restriction == '55':
+                schedule55.insertAtEnd(node)
+            else:
+                val = random.randint(54, 55)
+                if val == 54:
+                    schedule54.insertAtEnd(node)
+                    return
+                else:
+                    schedule55.insertAtEnd(node)
+                    return
+
+    cur1 = schedule54.head
+    cur2 = schedule55.head
+    if cur1 is not None:
+        while (cur1.next is not None):
+            cur1 = cur1.next
+    if cur2 is not None:
+        while (cur2.next is not None):
+            cur2 = cur2.next
+
+    if schedule54.head is None: 
+        if schedule55.head is not None:
+            if cur2.qsv == node.qsv:
+                schedule55.insertAtEnd(node)
+            else:
+                if node.restriction == '55':
+                    schedule55.insertAtEnd(node)
+                else:
+                    schedule54.insertAtEnd(node)
+    elif schedule54.head is not None: 
+        if schedule55.head is None:
+            if cur1.qsv == node.qsv:
+                schedule54.insertAtEnd(node)
+            else:
+                if node.restriction == '54':
+                    schedule54.insertAtEnd(node)
+                else:
+                    schedule55.insertAtEnd(node)
+    else:
+        if cur1.qsv != node.qsv & cur2.qsv != node.qsv:
+            node.start_time += 40
+            if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
+                schedule54.insertAtEnd(node)
+            else:
+                schedule55.insertAtEnd(node)
+        else:
+            if cur1.qsv == node.qsv:
+                findBestSpot(schedule54, schedule55, node)
+            else:
+                findBestSpot(schedule55, schedule54, node)
+
+def findBestSpot(list1, list2, node):
+    cur1 = list1.head
+    cur2 = list2.head
+    best1 = None
+    best2 = None
+    while (cur1.next is not None):
+        cur1 = cur1.next
+    while (cur2.next is not None):
+        cur2 = cur2.next
+    
+    bestImprovement = 0
+    while (cur1.qsv == node.qsv & cur1 is not None):
+        while (cur2.end_time > cur1.start_time & cur2 is not None):
+            if cur2.start_time < cur1.end_time:
+                if bestImprovement < isCompatible(cur2, node) - isCompatible(cur1, cur2):
+                    bestImprovement = isCompatible(cur2, node) - isCompatible(cur1, cur2)
+                    best1 = cur1
+                    best2 = cur2            
+            cur2 = cur2.prev
+        cur1 = cur1.prev
+    if bestImprovement <= 0:
+        list1.addToBack(node)
+    else:
+        list1.swap(best1, node)            
+
+def isCompatible(node1, node2):
+    compatibiltyScore = 0
+    totalNoLanes = node1.noLanes + node2.noLanes
+    if totalNoLanes > 16:
+        compatibiltyScore -= 2
+    elif totalNoLanes > 14 & totalNoLanes <= 16:
+        compatibiltyScore -= 1
+    elif totalNoLanes >= 12 & totalNoLanes <= 14:
+        compatibiltyScore += 1
+    else:
+        compatibiltyScore += 2
+
+    if node1.isCoprint is True & node2.isCoprint is True:
+        if node1.no_coprint + node2.no_coprint >= 8:
+            compatibiltyScore -= 2
+        else:
+            compatibiltyScore -= 1
+    if ((node1.isCoprint is True & node2.isLarge is True) |  (node2.isCoprint is True & node1.isLarge is True)):
+        compatibiltyScore += 1
+
+    totalWaste = node1.waste + node2.waste
+    if totalWaste > 1500:
+        compatibiltyScore -= 2
+    elif totalWaste >= 500 & totalWaste <= 1500:
+        compatibiltyScore -= 1
+    elif totalWaste < 500:
+        compatibiltyScore += 1
+
+    return compatibiltyScore
+                
+for index, row in sorted_b1.iterrows():
+   new_node = create_node(row)
+   scanToInsert(new_node)
+
+print('\nSchedule 54')
+schedule54.printList(schedule54.head)
+print('\nSchedule 55')
+schedule55.printList(schedule55.head)
+
+    
+       
+    
+# %%
