@@ -14,7 +14,7 @@ file2 = open('output2.txt', 'w')
 # Defining data structures for doubly linked lists 
 
 class Node: 
-    def __init__(self, orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction): 
+    def __init__(self, orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction, due_date): 
         
         self.orderID = orderID
         
@@ -33,6 +33,7 @@ class Node:
         self.waste = waste
         self.no_coprint = no_coprint
         self.restriction = restriction
+        self.due_date = due_date
 
         self.start_time = None
         self.end_time = None
@@ -120,7 +121,7 @@ class doublyLinkedList:
         while node:
             
             # print(" {} {} {} {} {} {} {} {} {}".format(node.orderID, node.qsv, node.noLanes, node.noRolls, node.waste, node.no_coprint, node.restriction, node.start_time, node.end_time))
-            text = text + "{},{},{},{},{},{},{}\n".format(node.orderID, node.qsv, node.noLanes, node.noRolls, node.waste, node.no_coprint, node.restriction)
+            text = text + "{},{},{},{},{},{},{},{}\n".format(node.orderID, node.qsv, node.noLanes, node.noRolls, node.waste, node.no_coprint, node.restriction, node.due_date)
             # last = node
             node = node.next
 
@@ -142,7 +143,7 @@ class doublyLinkedList:
         current = self.head
         #below is from stackoverflow : https://stackoverflow.com/questions/36491307/how-to-copy-linked-list-in-python
         while current is not None:
-            newNode = Node(current.orderID, current.noRolls, current.noLanes, current.qsv, current.waste, current.no_coprint, current.restriction)
+            newNode = Node(current.orderID, current.noRolls, current.noLanes, current.qsv, current.waste, current.no_coprint, current.restriction, current.due_date)
             newLinkedList.insertAtEnd(newNode)
             current = current.next
         return newLinkedList
@@ -275,6 +276,7 @@ def create_node(wip_row):
     noLanes = wip_row[" Lanes"]
     qsv = wip_row[" QSV"]
     waste = wip_row[" Potential Waste Length"]
+    due_date = wip_row[" POrder Due Date"]
 
     if orderID[-1]=='C':
         matching_id = sp_df[sp_df['Order number']==orderID]
@@ -299,7 +301,7 @@ def create_node(wip_row):
         restriction = "na"
 
 #    print(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
-    new_node = Node(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
+    new_node = Node(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction, due_date)
     return new_node
 
 #for index, row in sorted_b1.iterrows():
@@ -476,10 +478,10 @@ for index, row in sorted_b3.iterrows():
 
 sorted_wr_df
 # print('\nSchedule 54')
-print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction", file=file1)
+print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction,due_date", file=file1)
 print(schedule54.printList(schedule54.head), file=file1)
 # print('\nSchedule 55')
-print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction", file=file2)
+print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction,due_date", file=file2)
 print(schedule55.printList(schedule55.head), file=file2)
 
 file1.close()
