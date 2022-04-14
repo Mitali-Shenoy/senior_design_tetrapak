@@ -318,8 +318,10 @@ def scanToInsert(node):
         if schedule55.head is None:
             if node.restriction == '54':
                 schedule54.insertAtEnd(node)
+                return
             elif node.restriction == '55':
                 schedule55.insertAtEnd(node)
+                return
             else:
                 val = random.randint(54, 55)
                 if val == 54:
@@ -342,36 +344,44 @@ def scanToInsert(node):
         if schedule55.head is not None:
             if cur2.qsv == node.qsv:
                 schedule55.insertAtEnd(node)
+                return
             else:
                 if node.restriction == '55':
                     schedule55.insertAtEnd(node)
+                    return
                 else:
                     schedule54.insertAtEnd(node)
+                    return
     elif schedule54.head is not None: 
         if schedule55.head is None:
             if cur1.qsv == node.qsv:
                 schedule54.insertAtEnd(node)
+                return
             else:
                 if node.restriction == '54':
                     schedule54.insertAtEnd(node)
+                    return
                 else:
                     schedule55.insertAtEnd(node)
+                    return
     else:
         if cur1.qsv != node.qsv & cur2.qsv != node.qsv:
             node.start_time += 40
             if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
                 schedule54.insertAtEnd(node)
+                return
             else:
                 schedule55.insertAtEnd(node)
+                return
         else:
             if cur1.qsv == node.qsv:
-                findBestSpot(schedule54, schedule55, node)
+                findBestSpot(node)
             else:
-                findBestSpot(schedule55, schedule54, node)
+                findBestSpot(node)
 
-def findBestSpot(list1, list2, node):
-    cur1 = list1.head
-    cur2 = list2.head
+def findBestSpot(node):
+    cur1 = schedule54.head
+    cur2 = schedule55.head
     best1 = None
     best2 = None
     while (cur1.next is not None):
@@ -390,9 +400,9 @@ def findBestSpot(list1, list2, node):
             cur2 = cur2.prev
         cur1 = cur1.prev
     if bestImprovement <= 0:
-        list1.addToBack(node)
+        schedule54.insertAtEnd(node)
     else:
-        list1.swap(best1, node)            
+        schedule54.swap(best1, node)            
 
 def isCompatible(node1, node2):
     compatibiltyScore = 0
