@@ -5,6 +5,7 @@ from re import T
 import pandas as pd
 import numpy as np
 import tkinter as tk 
+import datetime
 
 from tkinter import filedialog
 # %%
@@ -152,6 +153,7 @@ class doublyLinkedList:
     #     tail = self.head
     #     while (tail.next is not None):
     #         tail = tail.next
+       
     #     if old == self.head:
     #         new.next = self.head.next
     #         self.head = new
@@ -225,7 +227,9 @@ wr_df = wr_df[["Material"," Order", " QSV", " Lanes", " No Of Rolls", " Potentia
 wr_df = pd.DataFrame(wr_df[wr_df['Material']=='WIP Printing-Lamina'])
 wr_df = wr_df.astype({" Order": str, " Lanes": int, " No Of Rolls": int}) #setting the datatype for columns
 wr_df[" POrder Due Date"] = pd.to_datetime(wr_df[" POrder Due Date"])
-# print(wr_df)
+wr_df["restriction"] = None
+
+
 
 # print()
 # print(sp_df.columns)
@@ -234,6 +238,24 @@ wr_df[" POrder Due Date"] = pd.to_datetime(wr_df[" POrder Due Date"])
 sp_df = sp_df[[0, "Order number", "Package.Volume", "Package.Shape", "Lane Assignment"]]
 sp_df = sp_df.astype({0 : int, "Order number": str, "Package.Volume": str, "Package.Shape": str, "Lane Assignment": str}) #setting the datatype for columns
 
+for index, row in wr_df.iterrows():
+    matching_id = sp_df[sp_df['Order number']==row[' Order']]
+    volume = matching_id.iloc[0,2]
+    shape = matching_id.iloc[0,3]
+
+    if (volume == "250 ml") and (shape == "Edge"):
+        wr_df.at[index, 'restriction'] = '55'
+    elif (volume == "250 ml") and (shape == "Base Leaf"):
+        wr_df.at[index, 'restriction'] = "55"
+    elif (volume == "125 ml") and (shape == "Slim"): 
+        wr_df.at[index, 'restriction'] = "54"
+    else: 
+        wr_df.at[index, 'restriction'] = "na"
+
+    
+# print(wr_df)
+
+
 # print(sp_df)
 
 # %%
@@ -241,33 +263,85 @@ sp_df = sp_df.astype({0 : int, "Order number": str, "Package.Volume": str, "Pack
 sorted_wr_df = wr_df.sort_values(by = [" POrder Due Date"])
 # print(sorted_wr_df[:20])
 
-order_len = len(sorted_wr_df)
-bucket_1 = sorted_wr_df.iloc[0:int(order_len/3),:] 
-bucket_2 = sorted_wr_df.iloc[int((order_len/3)):int(2*(order_len/3))+1,:] 
-bucket_3 = sorted_wr_df.iloc[int((2*(order_len/3))+1):order_len+1,:] 
+# order_len = len(sorted_wr_df)
+# bucket_1 = sorted_wr_df.iloc[0:int(order_len/3),:] 
+# bucket_2 = sorted_wr_df.iloc[int((order_len/3)):int(2*(order_len/3))+1,:] 
+# bucket_3 = sorted_wr_df.iloc[int((2*(order_len/3))+1):order_len+1,:] 
 
 
-# print("\nBucket 1")
-sorted_b1 = bucket_1.sort_values(by = [" QSV"])
-# print(sorted_b1)
-# print("\nBucket 2\n")
-sorted_b2 = bucket_2.sort_values(by = [" QSV"])
-# print(sorted_b2)
-# print("\nBucket 3\n")
-sorted_b3 = bucket_3.sort_values(by = [" QSV"])
-# print(sorted_b3)
+# # print("\nBucket 1")
+# sorted_b1 = bucket_1.sort_values(by = [" QSV"])
+# # print(sorted_b1)
+# # print("\nBucket 2\n")
+# sorted_b2 = bucket_2.sort_values(by = [" QSV"])
+# # print(sorted_b2)
+# # print("\nBucket 3\n")
+# sorted_b3 = bucket_3.sort_values(by = [" QSV"])
+# # print(sorted_b3)
 
+sorted_wr_df = sorted_wr_df.reset_index()
+curr_date = sorted_wr_df.at[0,' POrder Due Date']
+buckets = [[]]
+bucket_no = 0
+# print(curr_date)
+for index, row in sorted_wr_df.iterrows():
+    if row[' POrder Due Date'] == curr_date or row[' POrder Due Date'] == curr_date+ datetime.timedelta(days=1):
+        buckets[bucket_no].append(row)
+        # curr_date = row[' POrder Due Date']
+    else:
+        bucket_no +=1
+        buckets.append([])
+        curr_date = row[' POrder Due Date']
+        buckets[bucket_no].append(row)
+
+grouped_df = pd.DataFrame()
+for bucket in buckets: 
+    tmp_df = pd.DataFrame(bucket)
+    tmp_df = tmp_df.sort_values(by = [" QSV"])
+    grouped_df = grouped_df.append(tmp_df)
+
+# print(grouped_df)
 
 # %%
 
 schedule54 = doublyLinkedList() # linked list maintaining schedule for slitter 54
 schedule55 = doublyLinkedList() # linkedlist maintaining schedule for slitter 55
 
+
+ERT_54 = 0
+ERT_55 = 0
+
+df_54 = grouped_df[grouped_df['restriction']=='54']
+df_55 = grouped_df[grouped_df['restriction']=='55']
+
+# print(df_54)
+# print(df_55)
+
+t_rolls_54 = df_54[" No Of Rolls"].sum()
+t_rolls_55 = df_55[" No Of Rolls"].sum()
+
+# print(t_rolls_54)
+# print(t_rolls_55)
+
+t_qsv_54 = df_54[" QSV"].count()
+t_qsv_55 = df_55[" QSV"].count()
+
+# print(t_qsv_54)
+# print(t_qsv_55)
+
+ERT_54 = (t_rolls_54 *18) + (t_qsv_55 *40)
+ERT_55 = (t_rolls_55 *18) + (t_qsv_55 *40)
+
+
+
 # creating nodes from the input file 
 
 # printing new lines
 # print()
-# print()
+# # print()
+
+curr_qsv_54 = ""
+curr_qsv_55 = ""
 
 def create_node(wip_row):
 
@@ -302,6 +376,26 @@ def create_node(wip_row):
 
 #    print(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction)
     new_node = Node(orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction, due_date)
+
+    global ERT_54
+    global ERT_55
+    global curr_qsv_55
+    global curr_qsv_54
+    
+    
+    
+
+    if restriction == "54":
+        # ERT_54 = ERT_54 + (18*noRolls)
+        if curr_qsv_54 is not qsv and schedule54.head is not None: 
+            ERT_54 = ERT_54 + 40
+        
+    
+    if restriction == "55": 
+        # ERT_55 = ERT_55 + (18*noRolls)   
+        if curr_qsv_55 is not qsv and schedule55.head is not None:
+            ERT_55 = ERT_55 + 40     
+
     return new_node
 
 #for index, row in sorted_b1.iterrows():
@@ -322,22 +416,31 @@ def create_node(wip_row):
 # schedule54.printList(schedule54.head)
 
 def scanToInsert(node):
+    global curr_qsv_54
+    global curr_qsv_55
+    global ERT_55
+    global ERT_54
+
     if schedule54.head is None: 
         if schedule55.head is None:
-            if node.restriction == '54':
+            if node.restriction == '54' or node.restriction =='na':
                 schedule54.insertAtEnd(node)
+                curr_qsv_54 = node.qsv
                 return
             elif node.restriction == '55':
                 schedule55.insertAtEnd(node)
+                curr_qsv_55 = node.qsv
                 return
-            else:
-                val = random.randint(54, 55)
-                if val == 54:
-                    schedule54.insertAtEnd(node)
-                    return
-                else:
-                    schedule55.insertAtEnd(node)
-                    return
+            # else:
+            #     val = random.randint(54, 55)
+            #     if val == 54:
+            #         schedule54.insertAtEnd(node)
+            #         curr_qsv_54 = node.qsv
+            #         return
+            #     else:
+            #         schedule55.insertAtEnd(node)
+            #         curr_qsv_55 = node.qsv
+            #         return
 
     cur1 = schedule54.head
     cur2 = schedule55.head
@@ -352,43 +455,133 @@ def scanToInsert(node):
         if schedule55.head is not None:
             if cur2.qsv == node.qsv:
                 schedule55.insertAtEnd(node)
+                curr_qsv_55 = node.qsv
                 return
             else:
                 if node.restriction == '55':
                     schedule55.insertAtEnd(node)
+                    curr_qsv_55 = node.qsv
+                    return
+                elif node.restriction == '54':
+                    schedule54.insertAtEnd(node)
+                    curr_qsv_54 = node.qsv
                     return
                 else:
-                    schedule54.insertAtEnd(node)
-                    return
+                    if node.restriction == 'na' and ERT_54 < ERT_55:
+                        if cur1 is not None:
+                            if cur1.qsv is not node.qsv:
+                                ERT_54 += (40 +18*node.noRolls)
+                            else:
+                                ERT_54 += (18*node.noRolls)
+                        schedule54.insertAtEnd(node)
+                        curr_qsv_54 = node.qsv
+                        return
+                    else:
+                        if cur2 is not None:
+                            if cur2.qsv is not node.qsv:
+                                ERT_55 += (40 +18*node.noRolls)
+                            else:
+                                ERT_55 += (18*node.noRolls)
+                        schedule55.insertAtEnd(node)
+                        curr_qsv_55 = node.qsv
+                        return
+
     elif schedule54.head is not None: 
         if schedule55.head is None:
             if cur1.qsv == node.qsv:
                 schedule54.insertAtEnd(node)
+                curr_qsv_54 = node.qsv
                 return
             else:
                 if node.restriction == '54':
                     schedule54.insertAtEnd(node)
+                    curr_qsv_54 = node.qsv
+                    return
+                elif node.restriction =="55":
+                    schedule55.insertAtEnd(node)
+                    curr_qsv_55 = node.qsv
                     return
                 else:
-                    schedule55.insertAtEnd(node)
-                    return
+                    if node.restriction == 'na' and ERT_54 < ERT_55:
+                        if cur1 is not None:
+                            if cur1.qsv is not node.qsv:
+                                ERT_54 += (40 +18*node.noRolls)
+                            else:
+                                ERT_54 += (18*node.noRolls)
+                        schedule54.insertAtEnd(node)
+                        curr_qsv_54 = node.qsv
+                        return
+                    else:
+                        if cur2 is not None:
+                            if cur2.qsv is not node.qsv:
+                                ERT_55 += (40 +18*node.noRolls)
+                            else:
+                                ERT_55 += (18*node.noRolls)
+                        schedule55.insertAtEnd(node)
+                        curr_qsv_55 = node.qsv
+                        return
+ 
 
     if (cur1.qsv != node.qsv) and (cur2.qsv != node.qsv):
         # node.start_time += 40
         if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
             if node.restriction == "54":
                 schedule54.insertAtEnd(node)
+                curr_qsv_54 = node.qsv
                 return
-            else: 
+            elif node.restriction == '55': 
                 schedule55.insertAtEnd(node)
+                curr_qsv_55 = node.qsv
                 return
+            else:
+                if node.restriction == 'na' and ERT_54 < ERT_55:
+                    if cur1 is not None:
+                        if cur1.qsv is not node.qsv:
+                                ERT_54 += (40 +18*node.noRolls)
+                        else:
+                            ERT_54 += (18*node.noRolls)
+                    schedule54.insertAtEnd(node)
+                    curr_qsv_54 = node.qsv
+                    return
+                else:
+                    if cur1 is not None:
+                        if cur2.qsv is not node.qsv:
+                                ERT_55 += (40 +18*node.noRolls)
+                        else:
+                                ERT_55 += (18*node.noRolls)
+                    schedule55.insertAtEnd(node)
+                    curr_qsv_55 = node.qsv
+                    return
+
         else:
             if node.restriction == "55":
                 schedule55.insertAtEnd(node)
+                curr_qsv_55 = node.qsv
+                return
+            elif node.restriction == '54': 
+                schedule54.insertAtEnd(node)
+                curr_qsv_54 = node.qsv
                 return
             else: 
-                schedule54.insertAtEnd(node)
-                return
+                if node.restriction == 'na' and ERT_54 < ERT_55:
+                    if cur1 is not None:
+                        if cur1.qsv is not node.qsv:
+                                ERT_54 += (40 +10*node.noRolls)
+                        else:
+                                ERT_54 += (18*node.noRolls)
+                    schedule54.insertAtEnd(node)
+                    curr_qsv_54 = node.qsv
+                    return
+                else:
+                    if cur1 is not None:
+                        if cur2.qsv is not node.qsv:
+                                ERT_55 += (40 +18*node.noRolls)
+                        else:
+                                ERT_55 += (18*node.noRolls)
+                    schedule55.insertAtEnd(node)
+                    curr_qsv_55 = node.qsv
+                    return
+
 
     if cur1.qsv == node.qsv:
         findBestSpot(node)
@@ -396,6 +589,8 @@ def scanToInsert(node):
         findBestSpot(node)
 
 def findBestSpot(node):
+    global curr_qsv_54
+    global curr_qsv_55
     cur1 = schedule54.head
     cur2 = schedule55.head
     best1 = None
@@ -418,16 +613,20 @@ def findBestSpot(node):
     if bestImprovement <= 0:
         if node.restriction == "54":
             schedule54.insertAtEnd(node)
+            curr_qsv_54 = node.qsv
             return
         else: 
             schedule55.insertAtEnd(node)
+            curr_qsv_55 = node.qsv
     else:
         # schedule54.swap(best1, node) 
         if node.restriction == "55":
             schedule55.insertAtEnd(node)
+            curr_qsv_55 = node.qsv
             return
         else: 
             schedule54.insertAtEnd(node)
+            curr_qsv_54 = node.qsv
             return
 
 def isCompatible(node1, node2):
@@ -460,17 +659,17 @@ def isCompatible(node1, node2):
 
     return compatibiltyScore
                 
-for index, row in sorted_b1.iterrows():
+for index, row in grouped_df.iterrows():
    new_node = create_node(row)
    scanToInsert(new_node)
 
-for index, row in sorted_b2.iterrows():
-   new_node = create_node(row)
-   scanToInsert(new_node)
+# for index, row in sorted_b2.iterrows():
+#    new_node = create_node(row)
+#    scanToInsert(new_node)
 
-for index, row in sorted_b3.iterrows():
-   new_node = create_node(row)
-   scanToInsert(new_node)
+# for index, row in sorted_b3.iterrows():
+#    new_node = create_node(row)
+#    scanToInsert(new_node)
 
 # for index, row in sorted_wr_df.iterrows():
 #    new_node = create_node(row)
@@ -487,12 +686,12 @@ print(schedule55.printList(schedule55.head), file=file2)
 file1.close()
 
 df_54 = pd.read_csv("output1.txt", delimiter=",")
-print(df_54)
+# print(df_54)
        
 file2.close()
 
 df_55 = pd.read_csv("output2.txt", delimiter=",")
-print(df_55)
+# print(df_55)
 
 tmp_54 = df_54
 tmp_54["Scheduled Machine"] = 54
@@ -505,6 +704,9 @@ writer = pd.ExcelWriter('schedules.xlsx', engine='xlsxwriter')
 df_54.to_excel(writer, sheet_name='Schedule 54', index = False)
 df_55.to_excel(writer, sheet_name='Schedule 55', index = False)
 df_combined.to_excel(writer, sheet_name='Combined Schedules', index = False)
+
+print( "ERT 54:", ERT_54)
+print( "ERT 55:", ERT_55)
 
 writer.save()
 # %%
