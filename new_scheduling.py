@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import tkinter as tk 
 import datetime
+#from xlsxwriter import Workbook
 
 from tkinter import filedialog
 # %%
@@ -96,9 +97,9 @@ class doublyLinkedList:
 
         if self.head is None: 
             new_node.prev = None 
-            self.head = new_node
             new_node.start_time = 0
             new_node.end_time = 18 * new_node.noRolls            
+            self.head = new_node
             return 
 
         while (last.next is not None): 
@@ -108,10 +109,11 @@ class doublyLinkedList:
         new_node.prev = last
         if new_node.start_time is None:
             new_node.start_time = last.end_time
+            new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
         else:
             new_node.start_time = 40 + last.end_time
+            new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
 
-        new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
 
     #def get():
     
@@ -149,26 +151,49 @@ class doublyLinkedList:
             current = current.next
         return newLinkedList
     
-    # def swap(self, old, new):
-    #     tail = self.head
-    #     while (tail.next is not None):
-    #         tail = tail.next
+    def swap(self, old, new):
+        
+        tail = self.head
+        
+        while (tail.next is not None):
+            tail = tail.next
        
-    #     if old == self.head:
-    #         new.next = self.head.next
-    #         self.head = new
-    #     elif old == tail:
-    #         tail.prev.next = new
-    #         tail = new
-    #     else:
-    #         old.prev.next = new
-    #         new.next = old.next
-    #     cur = new
-    #     while cur.next is not None:
-    #         if cur.prev.qsv != cur.qsv:
-    #             cur.start_time = cur.prev.end_time + 40
-    #         cur.end_time = cur.start_time + (18 * cur.noRolls)
-    #         cur = cur.next
+        if old == self.head:
+            new.next = self.head.next
+            new.prev = None
+            new.start_time = 0
+            new.end_time = new.start_time + (18 * new.noRolls)
+            self.head = new
+            
+        elif old == tail:
+            new.next = None
+            new.prev = tail.prev
+            new.start_time = new.prev.end_time
+            new.end_time = new.start_time + (18 * new.noRolls)
+            tail.prev.next = new
+            # tail = new
+        else:
+            new.prev = old.prev
+            new.next = old.next
+            new.start_time = new.prev.end_time
+            new.end_time = new.start_time + (18 * new.noRolls)
+            old.prev.next = new
+            old.next.prev = new
+            
+            
+        
+        # new.start_time = new.prev.end_time
+        # new.end_time = new.start_time + (18 * new.noRolls)
+        cur = new
+        while cur.next is not None:
+            if cur.prev.qsv != cur.qsv:
+                cur.start_time = cur.prev.end_time + 40
+            cur.end_time = cur.start_time + (18 * cur.noRolls)
+            cur = cur.next
+
+        old.next = None
+        old.prev = None
+        return old
     
 
 
@@ -298,7 +323,7 @@ grouped_df = pd.DataFrame()
 for bucket in buckets: 
     tmp_df = pd.DataFrame(bucket)
     tmp_df = tmp_df.sort_values(by = [" QSV"])
-    grouped_df = grouped_df.append(tmp_df)
+    grouped_df = pd.concat([grouped_df, tmp_df])
 
 # print(grouped_df)
 
@@ -385,16 +410,16 @@ def create_node(wip_row):
     
     
 
-    if restriction == "54":
-        # ERT_54 = ERT_54 + (18*noRolls)
-        if curr_qsv_54 is not qsv and schedule54.head is not None: 
-            ERT_54 = ERT_54 + 40
+    # if restriction == "54":
+    #     # ERT_54 = ERT_54 + (18*noRolls)
+    #     if curr_qsv_54 is not qsv and schedule54.head is not None: 
+    #         ERT_54 = ERT_54 + 40
         
     
-    if restriction == "55": 
-        # ERT_55 = ERT_55 + (18*noRolls)   
-        if curr_qsv_55 is not qsv and schedule55.head is not None:
-            ERT_55 = ERT_55 + 40     
+    # if restriction == "55": 
+    #     # ERT_55 = ERT_55 + (18*noRolls)   
+    #     if curr_qsv_55 is not qsv and schedule55.head is not None:
+    #         ERT_55 = ERT_55 + 40     
 
     return new_node
 
@@ -591,18 +616,25 @@ def scanToInsert(node):
 def findBestSpot(node):
     global curr_qsv_54
     global curr_qsv_55
+    global ERT_55
+    global ERT_54
     cur1 = schedule54.head
     cur2 = schedule55.head
+    
     best1 = None
     best2 = None
+
     while (cur1.next is not None):
         cur1 = cur1.next
     while (cur2.next is not None):
         cur2 = cur2.next
     
+    best1 = cur1
+    best2 = cur2
     bestImprovement = 0
-    while (cur1 is not None and cur1.qsv == node.qsv ):
-        while (cur2 is not None and cur2.end_time > cur1.start_time ):
+
+    while (cur1 is not schedule54.head and cur1.qsv == node.qsv ):
+        while (cur2 is not schedule55.head and cur2.end_time > cur1.start_time ):
             if cur2.start_time < cur1.end_time:
                 if bestImprovement < isCompatible(cur2, node) - isCompatible(cur1, cur2):
                     bestImprovement = isCompatible(cur2, node) - isCompatible(cur1, cur2)
@@ -615,19 +647,70 @@ def findBestSpot(node):
             schedule54.insertAtEnd(node)
             curr_qsv_54 = node.qsv
             return
-        else: 
+        elif node.restriction == "55": 
             schedule55.insertAtEnd(node)
             curr_qsv_55 = node.qsv
+            return
+        else: 
+            if node.restriction == 'na' and ERT_54 < ERT_55:
+                if cur1 is not None:
+                    if cur1.qsv is not node.qsv:
+                            ERT_54 += (40 +10*node.noRolls)
+                    else:
+                            ERT_54 += (18*node.noRolls)
+                old = schedule54.swap(best1, node)
+                schedule54.insertAtEnd(old)
+                curr_qsv_54 = node.qsv
+                return
+            else:
+                if cur1 is not None:
+                    if cur2.qsv is not node.qsv:
+                            ERT_55 += (40 +18*node.noRolls)
+                    else:
+                            ERT_55 += (18*node.noRolls)
+                old = schedule55.swap(best2, node)
+                schedule55.insertAtEnd(old)
+                curr_qsv_55 = node.qsv
+                return
     else:
-        # schedule54.swap(best1, node) 
-        if node.restriction == "55":
-            schedule55.insertAtEnd(node)
-            curr_qsv_55 = node.qsv
+        if node.restriction == "54":
+            old = schedule54.swap(best1, node) 
+            schedule54.insertAtEnd(old)
+            return
+        elif node.restriction == "55": 
+            old = schedule55.swap(best2, node) 
+            schedule55.insertAtEnd(old)
             return
         else: 
-            schedule54.insertAtEnd(node)
-            curr_qsv_54 = node.qsv
-            return
+            if node.restriction == 'na' and ERT_54 < ERT_55:
+                if cur1 is not None:
+                    if cur1.qsv is not node.qsv:
+                            ERT_54 += (40 +10*node.noRolls)
+                    else:
+                            ERT_54 += (18*node.noRolls)
+                old = schedule54.swap(best1, node)
+                schedule54.insertAtEnd(old)
+                curr_qsv_54 = node.qsv
+                return
+            else:
+                if cur1 is not None:
+                    if cur2.qsv is not node.qsv:
+                            ERT_55 += (40 +18*node.noRolls)
+                    else:
+                            ERT_55 += (18*node.noRolls)
+                old = schedule55.swap(best2, node)
+                schedule55.insertAtEnd(old)
+                curr_qsv_55 = node.qsv
+                return
+                
+        # if node.restriction == "55":
+        #     schedule55.insertAtEnd(node)
+        #     curr_qsv_55 = node.qsv
+        #     return
+        # else: 
+        #     schedule54.insertAtEnd(node)
+        #     curr_qsv_54 = node.qsv
+        #     return
 
 def isCompatible(node1, node2):
     compatibiltyScore = 0
