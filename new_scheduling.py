@@ -811,6 +811,7 @@ for index, rows in df_55.iterrows():
     matching_id = sp_df[sp_df['Order number']==rows['orderID']]
     volume = matching_id.iloc[0,2]
     shape = matching_id.iloc[0,3]
+    customer = matching_id.iloc[0,6]
     df_55.at[index, 'package size'] = str(volume)+"-"+str(shape)
     df_55.at[index, 'approximate duration'] = rows["noRolls"]*18
     df_55.at[index, 'customer'] = customer
