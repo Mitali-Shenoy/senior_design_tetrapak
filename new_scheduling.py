@@ -6,9 +6,12 @@ import pandas as pd
 import numpy as np
 import tkinter as tk 
 import datetime
+import os
 #from xlsxwriter import Workbook
 
 from tkinter import filedialog
+from tkinter import *
+
 # %%
 
 file1 = open('output1.txt', 'w')
@@ -210,12 +213,12 @@ class doublyLinkedList:
 # llist.printList(llist.head)
 
 # %%
-file = open('output.txt', 'w')
+# file = open('output.txt', 'w')
 
 tk.Tk().withdraw() # prevents an empty tkinter window from appearing
 
 #asking the user to select their input file
-file_path = filedialog.askopenfilename()
+file_path = filedialog.askopenfilename(title = "Select WIP Report")
 
 # print(file_path)
 
@@ -225,12 +228,12 @@ wr_df = pd.read_excel(file_path) #read Wip Report File (wp)
 # print(wr_df)
 
 
-file = open('output.txt', 'w')
+# file = open('output.txt', 'w')
 
 tk.Tk().withdraw() # prevents an empty tkinter window from appearing
 
 #asking the user to select their input file
-file_path = filedialog.askopenfilename()
+file_path = filedialog.askopenfilename(title = "Select Slit Plan")
 
 # print(file_path)
 
@@ -252,7 +255,8 @@ wr_df = wr_df[["Material"," Order", " QSV", " Lanes", " No Of Rolls", " Potentia
 wr_df = pd.DataFrame(wr_df[wr_df['Material']=='WIP Printing-Lamina'])
 wr_df = wr_df.astype({" Order": str, " Lanes": int, " No Of Rolls": int}) #setting the datatype for columns
 wr_df[" POrder Due Date"] = pd.to_datetime(wr_df[" POrder Due Date"])
-wr_df["restriction"] = None
+wr_df["Restriction"] = None
+# wr_df["Package Size"] = None
 
 
 
@@ -260,22 +264,26 @@ wr_df["restriction"] = None
 # print(sp_df.columns)
 
 # cleaning up the in[ut data file for Slit Plan
-sp_df = sp_df[[0, "Order number", "Package.Volume", "Package.Shape", "Lane Assignment"]]
+sp_df = sp_df[[0, "Order number", "Package.Volume", "Package.Shape", "Lane Assignment", "Size", "Customer name"]]
 sp_df = sp_df.astype({0 : int, "Order number": str, "Package.Volume": str, "Package.Shape": str, "Lane Assignment": str}) #setting the datatype for columns
 
 for index, row in wr_df.iterrows():
     matching_id = sp_df[sp_df['Order number']==row[' Order']]
     volume = matching_id.iloc[0,2]
     shape = matching_id.iloc[0,3]
+    # size = matching_id.iloc[0,5]
 
     if (volume == "250 ml") and (shape == "Edge"):
-        wr_df.at[index, 'restriction'] = '55'
+        wr_df.at[index, 'Restriction'] = '55'
     elif (volume == "250 ml") and (shape == "Base Leaf"):
-        wr_df.at[index, 'restriction'] = "55"
+        wr_df.at[index, 'Restriction'] = "55"
     elif (volume == "125 ml") and (shape == "Slim"): 
-        wr_df.at[index, 'restriction'] = "54"
+        wr_df.at[index, 'Restriction'] = "54"
     else: 
-        wr_df.at[index, 'restriction'] = "na"
+        wr_df.at[index, 'Restriction'] = "na"
+
+    wr_df.at[index, ' POrder Due Date'] = row[" POrder Due Date"].date()
+    # wr_df.at[index, 'Package Size'] = size
 
     
 # print(wr_df)
@@ -336,8 +344,8 @@ schedule55 = doublyLinkedList() # linkedlist maintaining schedule for slitter 55
 ERT_54 = 0
 ERT_55 = 0
 
-df_54 = grouped_df[grouped_df['restriction']=='54']
-df_55 = grouped_df[grouped_df['restriction']=='55']
+df_54 = grouped_df[grouped_df['Restriction']=='54']
+df_55 = grouped_df[grouped_df['Restriction']=='55']
 
 # print(df_54)
 # print(df_55)
@@ -348,8 +356,8 @@ t_rolls_55 = df_55[" No Of Rolls"].sum()
 # print(t_rolls_54)
 # print(t_rolls_55)
 
-t_qsv_54 = df_54[" QSV"].count()
-t_qsv_55 = df_55[" QSV"].count()
+t_qsv_54 = df_54[" QSV"].nunique()
+t_qsv_55 = df_55[" QSV"].nunique()
 
 # print(t_qsv_54)
 # print(t_qsv_55)
@@ -769,27 +777,97 @@ print(schedule55.printList(schedule55.head), file=file2)
 file1.close()
 
 df_54 = pd.read_csv("output1.txt", delimiter=",")
+df_54["package size"] = None
+df_54["approximate duration"] = None
+df_54["customer"] = None
+for index, rows in df_54.iterrows():
+    matching_id = sp_df[sp_df['Order number']==rows['orderID']]
+    volume = matching_id.iloc[0,2]
+    shape = matching_id.iloc[0,3]
+    customer = matching_id.iloc[0,6]
+    df_54.at[index, 'package size'] = str(volume)+"-"+str(shape)
+    df_54.at[index, 'approximate duration'] = rows["noRolls"]*18
+    df_54.at[index, 'customer'] = customer
+
+# column_order = ["orderID", "qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]
+
+df_54 = df_54[["orderID", "customer","qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]]
+
+total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
+            "package size": ["", ERT_54, ""]}
+temp_df = pd.DataFrame(total_dict)
+# print(temp_df)
+df_54 = pd.concat([df_54, temp_df], ignore_index = True)
+
 # print(df_54)
        
 file2.close()
 
 df_55 = pd.read_csv("output2.txt", delimiter=",")
+df_55["package size"] = None
+df_55["approximate duration"] = None
+df_55["customer"] = None
+for index, rows in df_55.iterrows():
+    matching_id = sp_df[sp_df['Order number']==rows['orderID']]
+    volume = matching_id.iloc[0,2]
+    shape = matching_id.iloc[0,3]
+    df_55.at[index, 'package size'] = str(volume)+"-"+str(shape)
+    df_55.at[index, 'approximate duration'] = rows["noRolls"]*18
+    df_55.at[index, 'customer'] = customer
+
+df_55 = df_55[["orderID", "customer", "qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]]
+total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
+            "package size": ["", ERT_55,""]}
+temp_df = pd.DataFrame(total_dict)
+# print(temp_df)
+df_55 = pd.concat([df_55, temp_df], ignore_index = True)
+
+
 # print(df_55)
+
+root = Tk()
+root.withdraw()
+folder_selected = filedialog.askdirectory(title = "Select Output Folder")
+print(folder_selected)
+output_filename = folder_selected+"/schedules.xlsx"
+
+writer = pd.ExcelWriter(output_filename, engine='xlsxwriter')
+df_54.to_excel(writer, sheet_name='Schedule 54', index = False)
+df_55.to_excel(writer, sheet_name='Schedule 55', index = False)
+
 
 tmp_54 = df_54
 tmp_54["Scheduled Machine"] = 54
+tmp_54.drop(tmp_54.tail(3).index,inplace=True)
+total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
+            "package size": ["", ERT_54,""]}
+temp_df = pd.DataFrame(total_dict)
+# print(temp_df)
+tmp_54 = pd.concat([tmp_54, temp_df], ignore_index = True)
+
 tmp_55 = df_55
 tmp_55["Scheduled Machine"] = 55
-frames = [tmp_54, tmp_55]
-df_combined = pd.concat(frames)
+tmp_55.drop(tmp_55.tail(3).index,inplace=True)
+total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
+            "package size": ["", ERT_55,""]}
+temp_df = pd.DataFrame(total_dict)
+# print(temp_df)
+tmp_55 = pd.concat([tmp_55, temp_df], ignore_index = True)
 
-writer = pd.ExcelWriter('schedules.xlsx', engine='xlsxwriter')
-df_54.to_excel(writer, sheet_name='Schedule 54', index = False)
-df_55.to_excel(writer, sheet_name='Schedule 55', index = False)
+blank= {"":[""]}
+tmp_blank = pd.DataFrame(blank)
+frames = [tmp_54, tmp_blank, tmp_55]
+df_combined = pd.concat(frames, axis=1)
+
 df_combined.to_excel(writer, sheet_name='Combined Schedules', index = False)
 
-print( "ERT 54:", ERT_54)
-print( "ERT 55:", ERT_55)
+# os.remove('output.txt')
+os.remove('output1.txt')
+os.remove('output2.txt')
+
+print("Generated slitter schedules in file 'schedules.xlsx'")
+print( "Estimated Run Time on Slitter 54:", ERT_54, "minutes")
+print( "Estimated Run Time on Slitter 55:", ERT_55, "minutes")
 
 writer.save()
 # %%
