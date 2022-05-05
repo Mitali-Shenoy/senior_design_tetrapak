@@ -670,15 +670,18 @@ for index, row in grouped_df.iterrows():
    new_node = create_node(row)
    scanToInsert(new_node)
 
-#
+# Print each schedule to standard out and redirect to output1.txt and output2.txt
 print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction,due_date", file=file1)
 print(schedule54.printList(schedule54.head), file=file1)
 print("orderID,qsv,noLanes,noRolls,waste,no_coprint,restriction,due_date", file=file2)
 print(schedule55.printList(schedule55.head), file=file2)
 
+# Close output1.txt file
 file1.close()
 
+# Convert output1.txt to a csv file and then to a data frame
 df_54 = pd.read_csv("output1.txt", delimiter=",")
+# Add new columns to the data frame
 df_54["package size"] = None
 df_54["approximate duration"] = None
 df_54["customer"] = None
@@ -687,20 +690,26 @@ for index, rows in df_54.iterrows():
     volume = matching_id.iloc[0,2]
     shape = matching_id.iloc[0,3]
     customer = matching_id.iloc[0,6]
+    # populate new columns from Slit Plan
     df_54.at[index, 'package size'] = str(volume)+"-"+str(shape)
     df_54.at[index, 'approximate duration'] = rows["noRolls"]*roll_runtime
     df_54.at[index, 'customer'] = customer
 
+# Define order of columns for schedule54 sheet in schedules.xlsx
 df_54 = df_54[["orderID", "customer","qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]]
 
+# Print ERT at the end of schedule54 sheet in schedules.xlsx
 total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
             "package size": ["", ERT_54, ""]}
 temp_df = pd.DataFrame(total_dict)
 df_54 = pd.concat([df_54, temp_df], ignore_index = True)
 
+# Close output2.txt file
 file2.close()
 
+# Convert output1.txt to a csv file and then to a data frame
 df_55 = pd.read_csv("output2.txt", delimiter=",")
+# Add new columns to the data frame
 df_55["package size"] = None
 df_55["approximate duration"] = None
 df_55["customer"] = None
@@ -709,26 +718,33 @@ for index, rows in df_55.iterrows():
     volume = matching_id.iloc[0,2]
     shape = matching_id.iloc[0,3]
     customer = matching_id.iloc[0,6]
+    # populate new columns from Slit Plan
     df_55.at[index, 'package size'] = str(volume)+"-"+str(shape)
     df_55.at[index, 'approximate duration'] = rows["noRolls"]*roll_runtime
     df_55.at[index, 'customer'] = customer
 
+# Define order of columns for schedule55 sheet in schedules.xlsx
 df_55 = df_55[["orderID", "customer", "qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]]
+
+# Print ERT at the end of schedule55 sheet in schedules.xlsx
 total_dict = {"orderID":["","Estimated Total Run Time: ",""], 
             "package size": ["", ERT_55,""]}
 temp_df = pd.DataFrame(total_dict)
 df_55 = pd.concat([df_55, temp_df], ignore_index = True)
 
+# Open file explorer to select where to put schedules.xlsx
 root = Tk()
 root.withdraw()
 folder_selected = filedialog.askdirectory(title = "Select Output Folder")
 print(folder_selected)
 output_filename = folder_selected+"/schedules.xlsx"
 
+# Open a new excel workbook with 2 sheets: schedule54 and schedule55
 writer = pd.ExcelWriter(output_filename, engine='xlsxwriter')
 df_54.to_excel(writer, sheet_name='Schedule 54', index = False)
 df_55.to_excel(writer, sheet_name='Schedule 55', index = False)
 
+# Combine both schedules into a single dataframe
 tmp_54 = df_54
 tmp_54["Scheduled Machine"] = 54
 tmp_54.drop(tmp_54.tail(3).index,inplace=True)
@@ -750,13 +766,17 @@ tmp_blank = pd.DataFrame(blank)
 frames = [tmp_54, tmp_blank, tmp_55]
 df_combined = pd.concat(frames, axis=1)
 
+# Add combined schedule in a new sheet in the schedules.xlsx workbook
 df_combined.to_excel(writer, sheet_name='Combined Schedules', index = False)
 
+# Remove intermediary output files (output1.txt & output2.txt)
 os.remove('output1.txt')
 os.remove('output2.txt')
 
+# Print ERTs of both slitters to console log
 print("Generated slitter schedules in file 'schedules.xlsx'")
 print( "Estimated Run Time on Slitter 54:", ERT_54, "minutes")
 print( "Estimated Run Time on Slitter 55:", ERT_55, "minutes")
 
+# Save schedules.xlsx & end of program
 writer.save()
