@@ -18,6 +18,9 @@ file1 = open('output1.txt', 'w')
 file2 = open('output2.txt', 'w')
 # Defining data structures for doubly linked lists 
 
+roll_runtime = 18
+qsv_change_runtime = 40
+
 class Node: 
     def __init__(self, orderID, noRolls, noLanes, qsv, waste, no_coprint, restriction, due_date): 
         
@@ -61,12 +64,12 @@ class doublyLinkedList:
 
         self.head = new_node
         new_node.start_time = 0
-        new_node.end_time = 18 * new_node.noRolls
+        new_node.end_time = roll_runtime * new_node.noRolls
         last = self.head
         while (last.next is not None):
             last = last.next
             last.start_time = last.prev.end_time
-            last.end_time = last.start_time + (18 * last.noRolls)
+            last.end_time = last.start_time + (roll_runtime * last.noRolls)
 
 
     def insertAtPos(self, prev_node, new_node):
@@ -83,13 +86,13 @@ class doublyLinkedList:
             new_node.next.prev = new_node
         
         new_node.start_time = new_node.prev.end_time
-        new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
+        new_node.end_time = new_node.start_time + (roll_runtime * new_node.noRolls)
 
         rest = new_node
         while (rest.next is not None):
             rest = rest.next
             rest.start_time = rest.prev.end_time
-            rest.end_time = rest.start_time + (18 * rest.noRolls)
+            rest.end_time = rest.start_time + (roll_runtime * rest.noRolls)
             
 
     def insertAtEnd(self, new_node): 
@@ -101,7 +104,7 @@ class doublyLinkedList:
         if self.head is None: 
             new_node.prev = None 
             new_node.start_time = 0
-            new_node.end_time = 18 * new_node.noRolls            
+            new_node.end_time = roll_runtime * new_node.noRolls            
             self.head = new_node
             return 
 
@@ -112,10 +115,10 @@ class doublyLinkedList:
         new_node.prev = last
         if new_node.start_time is None:
             new_node.start_time = last.end_time
-            new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
+            new_node.end_time = new_node.start_time + (roll_runtime * new_node.noRolls)
         else:
-            new_node.start_time = 40 + last.end_time
-            new_node.end_time = new_node.start_time + (18 * new_node.noRolls)
+            new_node.start_time = qsv_change_runtime + last.end_time
+            new_node.end_time = new_node.start_time + (roll_runtime * new_node.noRolls)
 
 
     #def get():
@@ -165,33 +168,33 @@ class doublyLinkedList:
             new.next = self.head.next
             new.prev = None
             new.start_time = 0
-            new.end_time = new.start_time + (18 * new.noRolls)
+            new.end_time = new.start_time + (roll_runtime * new.noRolls)
             self.head = new
             
         elif old == tail:
             new.next = None
             new.prev = tail.prev
             new.start_time = new.prev.end_time
-            new.end_time = new.start_time + (18 * new.noRolls)
+            new.end_time = new.start_time + (roll_runtime * new.noRolls)
             tail.prev.next = new
             # tail = new
         else:
             new.prev = old.prev
             new.next = old.next
             new.start_time = new.prev.end_time
-            new.end_time = new.start_time + (18 * new.noRolls)
+            new.end_time = new.start_time + (roll_runtime * new.noRolls)
             old.prev.next = new
             old.next.prev = new
             
             
         
         # new.start_time = new.prev.end_time
-        # new.end_time = new.start_time + (18 * new.noRolls)
+        # new.end_time = new.start_time + (roll_runtime * new.noRolls)
         cur = new
         while cur.next is not None:
             if cur.prev.qsv != cur.qsv:
-                cur.start_time = cur.prev.end_time + 40
-            cur.end_time = cur.start_time + (18 * cur.noRolls)
+                cur.start_time = cur.prev.end_time + qsv_change_runtime
+            cur.end_time = cur.start_time + (roll_runtime * cur.noRolls)
             cur = cur.next
 
         old.next = None
@@ -362,8 +365,8 @@ t_qsv_55 = df_55[" QSV"].nunique()
 # print(t_qsv_54)
 # print(t_qsv_55)
 
-ERT_54 = (t_rolls_54 *18) + (t_qsv_55 *40)
-ERT_55 = (t_rolls_55 *18) + (t_qsv_55 *40)
+ERT_54 = (t_rolls_54 *roll_runtime) + (t_qsv_55 *qsv_change_runtime)
+ERT_55 = (t_rolls_55 *roll_runtime) + (t_qsv_55 *qsv_change_runtime)
 
 
 
@@ -419,15 +422,15 @@ def create_node(wip_row):
     
 
     # if restriction == "54":
-    #     # ERT_54 = ERT_54 + (18*noRolls)
+    #     # ERT_54 = ERT_54 + (roll_runtime*noRolls)
     #     if curr_qsv_54 is not qsv and schedule54.head is not None: 
-    #         ERT_54 = ERT_54 + 40
+    #         ERT_54 = ERT_54 + qsv_change_runtime
         
     
     # if restriction == "55": 
-    #     # ERT_55 = ERT_55 + (18*noRolls)   
+    #     # ERT_55 = ERT_55 + (roll_runtime*noRolls)   
     #     if curr_qsv_55 is not qsv and schedule55.head is not None:
-    #         ERT_55 = ERT_55 + 40     
+    #         ERT_55 = ERT_55 + qsv_change_runtime     
 
     return new_node
 
@@ -503,18 +506,18 @@ def scanToInsert(node):
                     if node.restriction == 'na' and ERT_54 < ERT_55:
                         if cur1 is not None:
                             if cur1.qsv is not node.qsv:
-                                ERT_54 += (40 +18*node.noRolls)
+                                ERT_54 += (qsv_change_runtime +roll_runtime*node.noRolls)
                             else:
-                                ERT_54 += (18*node.noRolls)
+                                ERT_54 += (roll_runtime*node.noRolls)
                         schedule54.insertAtEnd(node)
                         curr_qsv_54 = node.qsv
                         return
                     else:
                         if cur2 is not None:
                             if cur2.qsv is not node.qsv:
-                                ERT_55 += (40 +18*node.noRolls)
+                                ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                             else:
-                                ERT_55 += (18*node.noRolls)
+                                ERT_55 += (roll_runtime*node.noRolls)
                         schedule55.insertAtEnd(node)
                         curr_qsv_55 = node.qsv
                         return
@@ -538,25 +541,25 @@ def scanToInsert(node):
                     if node.restriction == 'na' and ERT_54 < ERT_55:
                         if cur1 is not None:
                             if cur1.qsv is not node.qsv:
-                                ERT_54 += (40 +18*node.noRolls)
+                                ERT_54 += (qsv_change_runtime +roll_runtime*node.noRolls)
                             else:
-                                ERT_54 += (18*node.noRolls)
+                                ERT_54 += (roll_runtime*node.noRolls)
                         schedule54.insertAtEnd(node)
                         curr_qsv_54 = node.qsv
                         return
                     else:
                         if cur2 is not None:
                             if cur2.qsv is not node.qsv:
-                                ERT_55 += (40 +18*node.noRolls)
+                                ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                             else:
-                                ERT_55 += (18*node.noRolls)
+                                ERT_55 += (roll_runtime*node.noRolls)
                         schedule55.insertAtEnd(node)
                         curr_qsv_55 = node.qsv
                         return
  
 
     if (cur1.qsv != node.qsv) and (cur2.qsv != node.qsv):
-        # node.start_time += 40
+        # node.start_time += qsv_change_runtime
         if schedule54.findSize(schedule54.head) < schedule55.findSize(schedule55.head):
             if node.restriction == "54":
                 schedule54.insertAtEnd(node)
@@ -570,18 +573,18 @@ def scanToInsert(node):
                 if node.restriction == 'na' and ERT_54 < ERT_55:
                     if cur1 is not None:
                         if cur1.qsv is not node.qsv:
-                                ERT_54 += (40 +18*node.noRolls)
+                                ERT_54 += (qsv_change_runtime +roll_runtime*node.noRolls)
                         else:
-                            ERT_54 += (18*node.noRolls)
+                            ERT_54 += (roll_runtime*node.noRolls)
                     schedule54.insertAtEnd(node)
                     curr_qsv_54 = node.qsv
                     return
                 else:
                     if cur1 is not None:
                         if cur2.qsv is not node.qsv:
-                                ERT_55 += (40 +18*node.noRolls)
+                                ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                         else:
-                                ERT_55 += (18*node.noRolls)
+                                ERT_55 += (roll_runtime*node.noRolls)
                     schedule55.insertAtEnd(node)
                     curr_qsv_55 = node.qsv
                     return
@@ -599,18 +602,18 @@ def scanToInsert(node):
                 if node.restriction == 'na' and ERT_54 < ERT_55:
                     if cur1 is not None:
                         if cur1.qsv is not node.qsv:
-                                ERT_54 += (40 +10*node.noRolls)
+                                ERT_54 += (qsv_change_runtime +roll_runtime*node.noRolls)
                         else:
-                                ERT_54 += (18*node.noRolls)
+                                ERT_54 += (roll_runtime*node.noRolls)
                     schedule54.insertAtEnd(node)
                     curr_qsv_54 = node.qsv
                     return
                 else:
                     if cur1 is not None:
                         if cur2.qsv is not node.qsv:
-                                ERT_55 += (40 +18*node.noRolls)
+                                ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                         else:
-                                ERT_55 += (18*node.noRolls)
+                                ERT_55 += (roll_runtime*node.noRolls)
                     schedule55.insertAtEnd(node)
                     curr_qsv_55 = node.qsv
                     return
@@ -663,9 +666,9 @@ def findBestSpot(node):
             if node.restriction == 'na' and ERT_54 < ERT_55:
                 if cur1 is not None:
                     if cur1.qsv is not node.qsv:
-                            ERT_54 += (40 +10*node.noRolls)
+                            ERT_54 += (qsv_change_runtime +18*node.noRolls)
                     else:
-                            ERT_54 += (18*node.noRolls)
+                            ERT_54 += (roll_runtime*node.noRolls)
                 old = schedule54.swap(best1, node)
                 schedule54.insertAtEnd(old)
                 curr_qsv_54 = node.qsv
@@ -673,9 +676,9 @@ def findBestSpot(node):
             else:
                 if cur1 is not None:
                     if cur2.qsv is not node.qsv:
-                            ERT_55 += (40 +18*node.noRolls)
+                            ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                     else:
-                            ERT_55 += (18*node.noRolls)
+                            ERT_55 += (roll_runtime*node.noRolls)
                 old = schedule55.swap(best2, node)
                 schedule55.insertAtEnd(old)
                 curr_qsv_55 = node.qsv
@@ -693,9 +696,9 @@ def findBestSpot(node):
             if node.restriction == 'na' and ERT_54 < ERT_55:
                 if cur1 is not None:
                     if cur1.qsv is not node.qsv:
-                            ERT_54 += (40 +10*node.noRolls)
+                            ERT_54 += (qsv_change_runtime +18*node.noRolls)
                     else:
-                            ERT_54 += (18*node.noRolls)
+                            ERT_54 += (roll_runtime*node.noRolls)
                 old = schedule54.swap(best1, node)
                 schedule54.insertAtEnd(old)
                 curr_qsv_54 = node.qsv
@@ -703,9 +706,9 @@ def findBestSpot(node):
             else:
                 if cur1 is not None:
                     if cur2.qsv is not node.qsv:
-                            ERT_55 += (40 +18*node.noRolls)
+                            ERT_55 += (qsv_change_runtime +roll_runtime*node.noRolls)
                     else:
-                            ERT_55 += (18*node.noRolls)
+                            ERT_55 += (roll_runtime*node.noRolls)
                 old = schedule55.swap(best2, node)
                 schedule55.insertAtEnd(old)
                 curr_qsv_55 = node.qsv
@@ -786,7 +789,7 @@ for index, rows in df_54.iterrows():
     shape = matching_id.iloc[0,3]
     customer = matching_id.iloc[0,6]
     df_54.at[index, 'package size'] = str(volume)+"-"+str(shape)
-    df_54.at[index, 'approximate duration'] = rows["noRolls"]*18
+    df_54.at[index, 'approximate duration'] = rows["noRolls"]*roll_runtime
     df_54.at[index, 'customer'] = customer
 
 # column_order = ["orderID", "qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]
@@ -813,7 +816,7 @@ for index, rows in df_55.iterrows():
     shape = matching_id.iloc[0,3]
     customer = matching_id.iloc[0,6]
     df_55.at[index, 'package size'] = str(volume)+"-"+str(shape)
-    df_55.at[index, 'approximate duration'] = rows["noRolls"]*18
+    df_55.at[index, 'approximate duration'] = rows["noRolls"]*roll_runtime
     df_55.at[index, 'customer'] = customer
 
 df_55 = df_55[["orderID", "customer", "qsv", "package size", "noLanes", "noRolls", "approximate duration", "waste", "no_coprint", "restriction", "due_date"]]
